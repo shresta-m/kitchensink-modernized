@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 import java.lang.annotation.*;
 
 @NotBlank
-@Size(max = 254)
+@Size(max = MemberRules.EMAIL_MAX)
 @Pattern(regexp = MemberRules.EMAIL)
 @ReportAsSingleViolation
 @Constraint(validatedBy = {})

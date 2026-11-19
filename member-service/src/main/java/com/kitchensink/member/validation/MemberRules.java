@@ -14,6 +14,7 @@ public final class MemberRules {
     public static final int NAME_MAX = 25;
     public static final String NAME_NO_DIGITS = "^\\D+$";
     public static final String EMAIL = "^[^\\s@]+@([^\\s@.]+\\.)+[^\\s@.]{2,}$";
+    public static final int EMAIL_MAX = 254;
     public static final String COUNTRY_CODE = "^\\+\\d{1,4}$";
     public static final String PASSWORD_FORMAT = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,72}$";
 
