@@ -8,8 +8,7 @@ The JBoss EAP `kitchensink` quickstart, migrated to Spring Boot 4.1 (Java 21), M
 |---|---|
 | `member-service/` | Spring Boot 4.1.1, Java 21, Spring Data MongoDB, JWT security |
 | `member-frontend/` | React 19, Vite, Tailwind |
-| `docs/` | Migration approach, security design, GenAI stretch design |
-| `scripts/mongo/` | Production database setup (validators, indexes, least-privilege user) |
+| `docs/` | Migration approach and GenAI stretch design |
 
 ## Prerequisites
 
@@ -55,7 +54,7 @@ The access token is kept in memory, so a page reload requires signing in again. 
 | `JWT_SECRET` | none, required | HMAC signing key, at least 32 characters |
 | `ADMIN_CODE` | empty | Grants ADMIN at registration. Empty disables admin self-registration |
 | `SPRING_MONGODB_URI` | local database | Connection string for any other environment. Keep `w=majority` |
-| `AUTO_INDEX` | `true` | `false` in production, indexes come from `scripts/mongo/setup.js` |
+| `AUTO_INDEX` | `true` | Creates the `@Indexed` indexes at startup (unique email, name, phone). Set `false` only if the indexes are created separately |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS allow-list, comma separated |
 | `FORWARD_HEADERS` | `none` | Set to `native` behind a trusted reverse proxy |
 | `SWAGGER_ENABLED` | `false` | API docs, development only |
@@ -86,7 +85,7 @@ Runs the unit and MockMvc tests and enforces a JaCoCo gate of 95% line and branc
 
 ## Production notes
 
-- Run `scripts/mongo/setup.js` as a database administrator (schema validators, indexes, least-privilege user), then start the service with `AUTO_INDEX=false` and `SPRING_MONGODB_URI` pointing at that user.
+- Point `SPRING_MONGODB_URI` at a database user with read/write access to the `members` collection, with `w=majority` in the URI. For a hardened setup, create the indexes separately and set `AUTO_INDEX=false`.
 - Behind a reverse proxy set `FORWARD_HEADERS=native`. Terminate TLS in front of the service; HSTS is sent on HTTPS requests.
 - Leave `SWAGGER_ENABLED` unset. Only `/actuator/health` is exposed.
 - Logs are plain text. Set `logging.structured.format.console=ecs` for JSON (ECS) logs once a collector is in place.
@@ -104,7 +103,7 @@ Package-by-feature (`auth`, `member`, `lookup`, `security`, `common`); inside a 
 
 | JBoss kitchensink | This project |
 |---|---|
-| `Member` JPA entity (`@Entity`, Bean Validation) | `Member` document and request DTOs with Bean Validation; indexes and `$jsonSchema` in `scripts/mongo/setup.js` |
+| `Member` JPA entity (`@Entity`, Bean Validation) | `Member` document and request DTOs with Bean Validation; unique email index and search indexes declared on the entity with `@Indexed` |
 | `MemberRepository` (EntityManager) | Spring Data MongoDB repository and `MemberQueryBuilder` |
 | `MemberRegistration` EJB / CDI | `AuthService` and `MemberService` (with `impl` classes) |
 | JAX-RS `MemberResourceRESTService` | `MemberController` under `/api/v1`: versioned, paged, role-protected |
