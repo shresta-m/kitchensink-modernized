@@ -1,54 +1,122 @@
 # kitchensink-modernized
 
-- `member-service/`  Spring Boot 4.1.1, Java 21, MongoDB, JWT security (migrated from the JBoss EAP kitchensink quickstart).
-- `frontend/` React 19 + Vite + Tailwind.
+The JBoss EAP `kitchensink` quickstart, migrated to Spring Boot 4.1 (Java 21), MongoDB and a React frontend, with security, validation, error handling and tests added.
 
-## Run
-```
-export JWT_SECRET='<at least 32 chars>'   # required, no default
-export ADMIN_CODE='XXXX-XXXX-XXXX'        # required to create the first admin; leave unset to disable admin self-registration
-export SWAGGER_ENABLED=true               # optional, API docs for development
-cd member-service && mvn clean verify && mvn spring-boot:run     # needs MongoDB on localhost:27017 (Java 21, Maven 3.9+)
-cd frontend && npm install && npm run dev                 # http://localhost:5173 (proxies /api to :8080)
-```
-Token is kept in memory: a page reload requires signing in again. Signing out, changing a password or an admin reset ends every session of that member on the server.
+`kitchensink` is the product name (repo, Java package, database, UI). `member-service` is the deployable Spring Boot service; `member-frontend` is the React app.
 
-## Security and database
+| Folder | What it is |
+|---|---|
+| `member-service/` | Spring Boot 4.1.1, Java 21, Spring Data MongoDB, JWT security |
+| `member-frontend/` | React 19, Vite, Tailwind |
+| `docs/` | Migration approach, security design, GenAI stretch design |
+| `scripts/mongo/` | Production database setup (validators, indexes, least-privilege user) |
 
-- Migration approach: [docs/MIGRATION.md](docs/MIGRATION.md). GenAI stretch design: [docs/GENAI.md](docs/GENAI.md).
-- Design, threat-to-test table, limits and a "verify it yourself" playbook: [docs/SECURITY.md](docs/SECURITY.md).
-- Production database: run `scripts/mongo/setup.js` as an administrator (schema validators, indexes, least-privilege user), then start the app with `AUTO_INDEX=false`.
-- Behind a reverse proxy set `FORWARD_HEADERS=native`. Set `SPRING_MONGODB_URI` for a non-local database (keep `w=majority`). API docs are off unless `SWAGGER_ENABLED=true`.
-- Viewer accounts can read and search; CSV export is ADMIN only.
-- Registration: self-registered members are **pending** until an admin approves them (`POST /api/v1/members/{id}/approve`; reject = delete). Pending members get 403 `ACCOUNT_PENDING` at login (after a correct password). Registering with `ADMIN_CODE` is active immediately, which is how the first admin is created.
+## Prerequisites
+
+Java 21, Maven 3.9+, Node 22+, and a MongoDB on `localhost:27017` (no authentication needed locally).
+
+## Build and run
+
+1. Set the environment variables (the app will not start without `JWT_SECRET`).
+
+   macOS / Linux:
+   ```
+   export JWT_SECRET='<at least 32 characters>'
+   export ADMIN_CODE='XXXX-XXXX-XXXX'     # optional: lets you register the first admin
+   export SWAGGER_ENABLED=true            # optional: API docs for development
+   ```
+   Windows PowerShell:
+   ```
+   $env:JWT_SECRET='<at least 32 characters>'
+   $env:ADMIN_CODE='XXXX-XXXX-XXXX'
+   $env:SWAGGER_ENABLED='true'
+   ```
+2. Backend (http://localhost:8080):
+   ```
+   cd member-service
+   mvn clean verify
+   mvn spring-boot:run
+   ```
+3. Frontend (http://localhost:5173, proxies `/api` to port 8080):
+   ```
+   cd member-frontend
+   npm install
+   npm run dev
+   ```
+4. Create the first admin: open http://localhost:5173/register and enter the `ADMIN_CODE` value in the admin code field. That account is active immediately. Everyone else who registers is **pending** until an admin approves them.
+5. API docs (when `SWAGGER_ENABLED=true`): http://localhost:8080/swagger-ui.html
+
+The access token is kept in memory, so a page reload requires signing in again. Signing out, changing a password or an admin reset ends every session of that member on the server.
+
+## Configuration
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `JWT_SECRET` | none, required | HMAC signing key, at least 32 characters |
+| `ADMIN_CODE` | empty | Grants ADMIN at registration. Empty disables admin self-registration |
+| `SPRING_MONGODB_URI` | local database | Connection string for any other environment. Keep `w=majority` |
+| `AUTO_INDEX` | `true` | `false` in production, indexes come from `scripts/mongo/setup.js` |
+| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS allow-list, comma separated |
+| `FORWARD_HEADERS` | `none` | Set to `native` behind a trusted reverse proxy |
+| `SWAGGER_ENABLED` | `false` | API docs, development only |
+| `LOGIN_MAX_FAILURES` / `LOGIN_WINDOW` / `LOGIN_LOCKOUT` | 5 / 15m / 15m | Per-email login lockout |
+| `IP_MAX_FAILURES` | 50 | Per-address failed logins in the window |
+| `TRACING_SAMPLING` | 0.0 | Trace sampling probability |
+
+## API summary
+
+All paths are under `/api/v1`. Errors always use one shape with a stable `code` (see the `ErrorCode` enum) and a `traceId`.
+
+| Area | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `/auth/login`, `/auth/logout`, `/auth/change-password`, `GET /auth/me` |
+| Members | `GET /members` (search, filter, sort, page), `GET /members/{id}`, `POST /members`, `PUT /members/{id}`, `PUT /members/{id}/role`, `POST /members/{id}/approve`, `POST /members/{id}/reset-password`, `DELETE /members/{id}`, `POST /members/bulk-delete`, `GET /members/export` |
+| Lookups | `GET /lookups/roles`, `GET /lookups/statuses` |
+| Health | `GET /actuator/health` (public, no details), `/liveness`, `/readiness` |
+
+Roles: **ADMIN** can manage everyone and export CSV. **VIEWER** can read and search only. The role is read from the database on every request, never from the token.
 
 ## Tests
 
-`cd member-service && mvn clean verify` runs 279 tests and enforces the JaCoCo gate (95% line and branch). The tests mock the database; there is no live-MongoDB integration test yet (listed as the next step in [docs/MIGRATION.md](docs/MIGRATION.md)).
+```
+cd member-service
+mvn clean verify
+```
+Runs the unit and MockMvc tests and enforces a JaCoCo gate of 95% line and branch coverage. The report is in `member-service/target/site/jacoco/index.html`. The repository layer is tested with mocks; a test against a real MongoDB is listed as a next step in [docs/MIGRATION.md](docs/MIGRATION.md).
+
+## Production notes
+
+- Run `scripts/mongo/setup.js` as a database administrator (schema validators, indexes, least-privilege user), then start the service with `AUTO_INDEX=false` and `SPRING_MONGODB_URI` pointing at that user.
+- Behind a reverse proxy set `FORWARD_HEADERS=native`. Terminate TLS in front of the service; HSTS is sent on HTTPS requests.
+- Leave `SWAGGER_ENABLED` unset. Only `/actuator/health` is exposed.
+- Logs are plain text. Set `logging.structured.format.console=ecs` for JSON (ECS) logs once a collector is in place.
+
+## Documentation
+
+- [docs/MIGRATION.md](docs/MIGRATION.md): how the migration was approached, data migration, decisions and trade-offs
+- [docs/GENAI.md](docs/GENAI.md): GenAI stretch goal (design only, not implemented)
 
 ## Package structure
 
-Package-by-feature (`auth`, `member`, `lookup`, `security`, `common`); inside a feature the layers are `controller`, `dto`, `model`, `service`, `service/impl`, `repository`, `exception`, `validation`. Controllers implement an interface that carries the OpenAPI and validation annotations; services are interfaces with one implementation each; cross-cutting code (error handling, API logging, config) lives in `common`. A feature can be lifted into its own service by moving its package.
+Package-by-feature (`auth`, `member`, `lookup`, `security`, `common`); inside a feature the layers are `controller`, `dto`, `model`, `service`, `service/impl`, `repository`, `exception`, `validation`. Controllers implement an interface that carries the OpenAPI and validation annotations; services are interfaces with one implementation each; cross-cutting code (error handling, API logging, configuration) lives in `common`. A feature can be lifted into its own service by moving its package.
 
 ## Legacy to new
 
 | JBoss kitchensink | This project |
 |---|---|
-| `Member` JPA entity (`@Entity`, Bean Validation) | `Member` document + request DTOs with Bean Validation; indexes and `$jsonSchema` in `scripts/mongo/setup.js` |
-| `MemberRepository` (EntityManager) | Spring Data MongoDB repository + `MemberQueryBuilder` |
-| `MemberRegistration` EJB / CDI | `AuthService` / `MemberService` (+ `impl`) |
-| JAX-RS `MemberResourceRESTService` | `MemberController` under `/api/v1`, versioned, paged, role-protected |
-| JSF/Faces UI | React SPA |
-| `Resources` producers, `persistence.xml`, datasource XML | Spring Boot auto-configuration, `application.properties` |
-| Arquillian tests | JUnit 5 + Mockito, MockMvc, 279 tests, JaCoCo 95% line and branch gate |
+| `Member` JPA entity (`@Entity`, Bean Validation) | `Member` document and request DTOs with Bean Validation; indexes and `$jsonSchema` in `scripts/mongo/setup.js` |
+| `MemberRepository` (EntityManager) | Spring Data MongoDB repository and `MemberQueryBuilder` |
+| `MemberRegistration` EJB / CDI | `AuthService` and `MemberService` (with `impl` classes) |
+| JAX-RS `MemberResourceRESTService` | `MemberController` under `/api/v1`: versioned, paged, role-protected |
+| JSF/Faces UI | React single-page app |
+| `Resources` producers, `persistence.xml`, datasource XML | Spring Boot auto-configuration and `application.properties` |
+| Arquillian tests | JUnit 5, Mockito, MockMvc, JaCoCo gate |
 | No authentication | JWT, roles, admin approval, throttling, session revocation |
 
-## Health and distributed tracing
+## Health, logging and tracing
 
-- `GET /actuator/health` (public, no details), `/actuator/health/liveness`, `/actuator/health/readiness` (includes MongoDB). Nothing else under `/actuator` is exposed.
-- Tracing uses the Micrometer Tracing API with the OpenTelemetry bridge (`spring-boot-micrometer-tracing-opentelemetry` + `micrometer-tracing-bridge-otel`), W3C `traceparent` propagation.
-- The browser starts the trace (`traceparent` header added in `frontend/src/api/client.ts`). The backend continues it with one span per HTTP request and one per MongoDB command, so a single trace shows browser call → API → database. A request without the header starts a new trace.
-- The trace id is returned in the `X-Trace-Id` response header, in the `traceId` field of error bodies, and in every log line as `[member-service,<traceId>,<spanId>]`, plus one access-log line per request.
-- No OTLP exporter is on the classpath, so nothing is exported and nothing tries `localhost:4318`. The trace id still shows in logs, the `X-Trace-Id` header and error bodies. To view traces, add an OTLP exporter dependency and point it at a collector, and raise `TRACING_SAMPLING` above 0.
-- API log: `ApiLoggingAspect` (Spring AOP) writes one line around every controller method: `API PUT /api/v1/members/42/role actor=<id> ip=<addr> outcome=OK|FAILED|ERROR error=<code> ms=<n>`. No bodies, parameters, query strings or tokens; the trace id is added by the log pattern. Nothing is stored in MongoDB: ship the logs to Elasticsearch/Kibana. Logs are plain text by default; set `logging.structured.format.console=ecs` for JSON (ECS) once a collector exists.
-- To follow a failed request: take the `traceId` from the error response and search the logs or the trace UI for it.
+- Tracing uses the Micrometer Tracing API with the OpenTelemetry bridge and W3C `traceparent` propagation. The browser starts the trace (`member-frontend/src/api/client.ts`); the backend continues it with one span per HTTP request and one per MongoDB command.
+- The trace id is returned in the `X-Trace-Id` response header, in the `traceId` field of error bodies, and in every log line as `[member-service,<traceId>,<spanId>]`.
+- No OTLP exporter is on the classpath, so nothing is exported. To view traces, add an exporter dependency, point it at a collector and raise `TRACING_SAMPLING`.
+- `ApiLoggingAspect` (Spring AOP) writes one line around every controller call: `API PUT /api/v1/members/42/role actor=<id> ip=<addr> outcome=OK|FAILED|ERROR error=<code> ms=<n>`. No bodies, parameters, query strings or tokens are logged. Requests rejected by the security filter (401 / 403) are logged in the same shape.
+- To follow a failed request, take the `traceId` from the error response and search the logs for it.
