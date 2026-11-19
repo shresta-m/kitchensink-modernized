@@ -1,0 +1,27 @@
+package com.kitchensink.common.exception;
+
+/** Stable machine-readable error identifiers. Messages may change; codes must not. */
+public enum ErrorCode {
+    VALIDATION_FAILED,
+    MALFORMED_REQUEST,
+    INVALID_ADMIN_CODE,
+    ACCOUNT_PENDING,
+    NOT_PENDING_APPROVAL,
+    INVALID_SORT,
+    EXPORT_TOO_LARGE,
+    MEMBER_NOT_FOUND,
+    DUPLICATE_EMAIL,
+    DUPLICATE_RESOURCE,
+    LAST_ADMIN,
+    ADMIN_PASSWORD_RESET_FORBIDDEN,
+    ADMIN_MUST_BE_DEMOTED,
+    PAGE_TOO_DEEP,
+    CONCURRENT_MODIFICATION,
+    REQUEST_REJECTED,
+    INVALID_CREDENTIALS,
+    INVALID_PASSWORD,
+    TOO_MANY_ATTEMPTS,
+    UNAUTHENTICATED,
+    ACCESS_DENIED,
+    INTERNAL_ERROR
+}
