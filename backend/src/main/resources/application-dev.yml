@@ -1,7 +1,0 @@
-# Local development: public Swagger UI, plain-text logs.
-app:
-  security:
-    docs-public: true
-logging:
-  level:
-    com.kitchensink: DEBUG
