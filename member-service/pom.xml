@@ -27,7 +27,7 @@
         <sonar.tests>src/test/java</sonar.tests>
         <sonar.java.source>${java.version}</sonar.java.source>
         <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.coverage.exclusions>**/KitchenSinkApplication.java</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>**/MemberServiceApplication.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -110,7 +110,7 @@
                 <configuration>
                     <excludes>
                         <!-- Only calls SpringApplication.run; covered by starting the app, not by a unit test -->
-                        <exclude>com/kitchensink/KitchenSinkApplication.class</exclude>
+                        <exclude>com/kitchensink/MemberServiceApplication.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
