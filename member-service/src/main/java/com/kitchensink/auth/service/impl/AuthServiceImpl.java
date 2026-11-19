@@ -28,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -79,7 +78,6 @@ public class AuthServiceImpl implements AuthService {
             throw new AccountPendingException();
         }
         JwtTokenService.IssuedToken token = tokenService.issue(member);
-        log.info("Member signed in id={}", member.getId());
         return new LoginResult(member, token.value(), token.expiresInSeconds());
     }
 
