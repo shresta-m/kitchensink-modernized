@@ -10,7 +10,7 @@ Legacy app: JSF page, `Member` JPA entity (name, email, phone), CDI/EJB registra
 4. **Port behaviour behind interfaces.** EJB/CDI services become `AuthService` / `MemberService` with `impl` classes. JAX-RS becomes versioned `/api/v1` controllers with paging, sorting and typed errors (`ErrorCode`).
 5. **Replace the UI.** JSF becomes a React app that talks only to the API.
 6. **Add what the legacy app lacked.** Authentication, roles, admin approval, throttling, session revocation, optimistic locking, CSV export (admin only), health and tracing, API logging.
-7. **Prove parity.** Unit tests per class, MockMvc controller tests, Testcontainers integration tests on real MongoDB, JaCoCo 100% line and branch gate in `mvn verify`.
+7. **Prove parity.** Unit tests per class and MockMvc controller tests (279 tests), JaCoCo gate of 95% line and branch in `mvn verify` (last measured 99%). A live-MongoDB integration test is the next addition (see section 7).
 
 ## 3. Mapping
 See the "Legacy to new" table in the README.
@@ -30,9 +30,12 @@ See the "Legacy to new" table in the README.
 | API log to stdout, shipped to Elasticsearch | Standard; no audit collection to secure | Needs a log pipeline in production |
 | In-memory throttle | Single instance, no extra infrastructure | Per instance; Redis or gateway for scale-out |
 | Package-by-feature | A feature can become its own service | Slightly more packages |
+| Single-document writes, no transactions | Every operation touches one document, which MongoDB makes atomic; `@Version` guards lost updates, a unique index guards duplicates | Multi-document rules (last admin, bulk delete) are best-effort; see section 7 |
+| Write concern `majority` in the connection string | An acknowledged write survives a primary failover | Slightly higher write latency |
+| One text log format | Same output in development and production; `logging.structured.format.console=ecs` switches to JSON when a collector exists | No JSON logs until that property is set |
 
 ## 6. Risks seen and handled
 Validation lived in the DB schema and UI only (now enforced in DTOs and Mongo); no authentication on the REST endpoint (now JWT); lost updates (now `@Version`); injection through search (typed, escaped prefix queries).
 
 ## 7. Next
-OIDC with MFA, refresh tokens, Redis-backed throttle, email verification, gateway rate limits.
+Testcontainers integration test (unique index, `@Version` conflict, bulk delete); atomic last-admin rule via a transaction; OIDC with MFA, refresh tokens, Redis-backed throttle, email verification, gateway rate limits.
