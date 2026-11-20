@@ -2,6 +2,7 @@ package com.kitchensink.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.kitchensink.member.constants.MemberConstants;
 import com.kitchensink.member.validation.MemberRules;
 import java.util.HashSet;
 import java.util.Set;
@@ -16,7 +17,7 @@ class SecureTemporaryPasswordGeneratorTest {
         for (int i = 0; i < 2_000; i++) {
             String password = generator.generate();
             assertThat(password).hasSize(12)
-                    .matches(MemberRules.PASSWORD_FORMAT)
+                    .matches(MemberConstants.PWD_FORMAT)
                     .doesNotContainPattern("[0OlI1]");
         }
     }

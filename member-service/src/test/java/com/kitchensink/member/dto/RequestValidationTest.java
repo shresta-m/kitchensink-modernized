@@ -6,6 +6,7 @@ import com.kitchensink.TestData;
 import com.kitchensink.auth.dto.ChangePasswordRequest;
 import com.kitchensink.auth.dto.LoginRequest;
 import com.kitchensink.auth.dto.RegisterRequest;
+import com.kitchensink.member.constants.MemberConstants;
 import com.kitchensink.member.model.Role;
 import com.kitchensink.member.validation.MemberRules;
 import jakarta.validation.ConstraintViolation;
@@ -46,7 +47,7 @@ class RequestValidationTest {
         request.setEmail("asha@example.com");
         request.setCountryCode("+91");
         request.setPhone(TestData.PHONE);
-        assertThat(messages(request, "name")).containsExactly(MemberRules.NAME_MESSAGE);
+        assertThat(messages(request, "name")).containsExactly(MemberConstants.NAME_MESSAGE);
         assertThat(request.toDetails().name()).isEqualTo("Asha4");
     }
 
@@ -55,7 +56,7 @@ class RequestValidationTest {
     void rejectsBadNamesWithOneMessage(String name) {
         CreateMemberRequest request = TestData.createRequest(Role.VIEWER);
         request.setName(name);
-        assertThat(messages(request, "name")).containsExactly(MemberRules.NAME_MESSAGE);
+        assertThat(messages(request, "name")).containsExactly(MemberConstants.NAME_MESSAGE);
     }
 
     @ParameterizedTest
@@ -63,21 +64,21 @@ class RequestValidationTest {
     void rejectsBadEmails(String email) {
         CreateMemberRequest request = TestData.createRequest(Role.VIEWER);
         request.setEmail(email);
-        assertThat(messages(request, "email")).containsExactly(MemberRules.EMAIL_MESSAGE);
+        assertThat(messages(request, "email")).containsExactly(MemberConstants.EMAIL_MESSAGE);
     }
 
     @Test
     void rejectsEmailLongerThan254Characters() {
         CreateMemberRequest request = TestData.createRequest(Role.VIEWER);
         request.setEmail("a".repeat(250) + "@b.com");
-        assertThat(messages(request, "email")).containsExactly(MemberRules.EMAIL_MESSAGE);
+        assertThat(messages(request, "email")).containsExactly(MemberConstants.EMAIL_MESSAGE);
     }
 
     @Test
     void rejectsCountryCodeWithoutPlus() {
         CreateMemberRequest request = TestData.createRequest(Role.VIEWER);
         request.setCountryCode("91");
-        assertThat(messages(request, "countryCode")).containsExactly(MemberRules.COUNTRY_CODE_MESSAGE);
+        assertThat(messages(request, "countryCode")).containsExactly(MemberConstants.COUNTRY_CODE_MESSAGE);
     }
 
     @Test
@@ -105,7 +106,7 @@ class RequestValidationTest {
         var request = TestData.registerRequest(null);
         request.setPassword("short");
         request.setConfirmPassword("short");
-        assertThat(messages(request, "password")).containsExactly(MemberRules.PASSWORD_MESSAGE);
+        assertThat(messages(request, "password")).containsExactly(MemberConstants.PWD_MESSAGE);
     }
 
     @Test
@@ -150,7 +151,7 @@ class RequestValidationTest {
     void changePasswordRequestRules() {
         com.kitchensink.auth.dto.ChangePasswordRequest request = new com.kitchensink.auth.dto.ChangePasswordRequest();
         assertThat(messages(request, "currentPassword")).containsExactly("Enter your current password");
-        assertThat(messages(request, "newPassword")).containsExactly(MemberRules.PASSWORD_MESSAGE);
+        assertThat(messages(request, "newPassword")).containsExactly(MemberConstants.PWD_MESSAGE);
         assertThat(messages(request, "confirmPassword")).containsExactly("Confirm your new password");
 
         request.setCurrentPassword("Old12345");

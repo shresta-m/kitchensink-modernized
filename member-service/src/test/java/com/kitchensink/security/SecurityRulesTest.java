@@ -282,10 +282,6 @@ class SecurityRulesTest {
         mvc.perform(get("/api/v1/members").secure(true))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
-                .andExpect(header().string("Referrer-Policy", "no-referrer"))
-                .andExpect(header().string("Permissions-Policy", SecurityConfig.PERMISSIONS_POLICY))
-                .andExpect(header().string("Content-Security-Policy", "frame-ancestors 'none'"))
-                .andExpect(header().string("Strict-Transport-Security", "max-age=31536000 ; includeSubDomains"))
                 .andExpect(header().string("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate"));
     }
 

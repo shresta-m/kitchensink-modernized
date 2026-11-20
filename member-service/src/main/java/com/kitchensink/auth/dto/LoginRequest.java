@@ -1,5 +1,6 @@
 package com.kitchensink.auth.dto;
 
+import com.kitchensink.member.constants.MemberConstants;
 import com.kitchensink.member.validation.MemberRules;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -20,12 +21,12 @@ public class LoginRequest {
 
     @Schema(example = "asha@example.com")
     @NotBlank(message = "Enter your email")
-    @Size(max = MemberRules.EMAIL_MAX, message = "Email is too long")
+    @Size(max = MemberConstants.EMAIL_MAX, message = "Email is too long")
     private String email;
 
     @Schema(example = "Secret@123")
     @NotBlank(message = "Enter your password")
-    @Size(max = 72, message = "Password is too long")
+    @Size(max = MemberConstants.PASSWORD_MAX, message = "Password is too long")
     private String password;
 
     @Override

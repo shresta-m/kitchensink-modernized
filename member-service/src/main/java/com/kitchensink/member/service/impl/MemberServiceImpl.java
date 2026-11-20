@@ -99,8 +99,7 @@ public class MemberServiceImpl implements MemberService {
             throw new NotPendingApprovalException(id);
         }
         member.approve(clock.instant());
-        Member saved = memberRepository.save(member);           // @Version: a concurrent change fails with a 409
-        return saved;
+        return memberRepository.save(member);
     }
 
     @Override
@@ -115,8 +114,7 @@ public class MemberServiceImpl implements MemberService {
         }
         member.updateProfile(details, clock.instant());
         try {
-            Member saved = memberRepository.save(member);       // @Version turns a concurrent edit into a 409
-            return saved;
+            return memberRepository.save(member);
         } catch (DuplicateKeyException e) {                     // lost a race on the unique email index
             throw new DuplicateEmailException();
         }

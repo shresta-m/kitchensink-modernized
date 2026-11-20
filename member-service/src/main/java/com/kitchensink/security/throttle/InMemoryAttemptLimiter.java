@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Sliding-window failure counter: {@code maxFailures} failures inside {@code window} lock the key for {@code lockout};
+ * Fixed-window failure counter: {@code maxFailures} failures inside {@code window} lock the key for {@code lockout};
  * a success clears the key. When the table reaches {@code maxEntries}, entries that are neither locked nor inside an
  * open window are dropped, so memory follows live attackers rather than history.
  */

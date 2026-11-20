@@ -24,7 +24,6 @@ import java.security.MessageDigest;
 import java.time.Clock;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
