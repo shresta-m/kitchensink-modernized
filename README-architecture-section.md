@@ -1,6 +1,5 @@
 ## Architecture and flows
 
-All diagrams are [Mermaid](https://mermaid.js.org/), so they render on GitHub and in the IntelliJ / VS Code Markdown preview.
 
 ### 1. System architecture
 
